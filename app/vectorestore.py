@@ -12,7 +12,7 @@ client = chromadb.PersistentClient(path = './data/chroma_db')
 
 # creating an embedding function-something Chroma can call automatically any
 # time we add or search to turn text into vector
-embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name = "all-MiniLM-L6-v2")
+embedding_fn = embedding_functions.ONNXMiniLM_L6_V2()
 
 # collection in chromadb is like a table in database
 # get_or_create_collection - if a collection named documents in our case already exists, reuse it else create a new one.
