@@ -27,6 +27,7 @@ class QueryRequest(BaseModel):
     top_k: int = 4
 
 @app.get("/")
+@app.head("/")
 async def root():
     """Serve the frontend index.html"""
     frontend_path = os.path.join(os.path.dirname(__file__), "..", "interdoc", "frontend", "index.html")
