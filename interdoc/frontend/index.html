@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interdoc - AI-Powered Document Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #76e4d3;
+            --primary-dark: #4fbfb0;
+            --secondary: #7c8cff;
+            --bg-dark: #070d18;
+            --bg-secondary: #0d1625;
+            --bg-tertiary: #131f31;
+            --text-primary: #eef4fb;
+            --text-secondary: #9fb0c4;
+            --border-color: #223247;
+            --accent: #8b93ff;
+            --success: #39d98a;
+            --warning: #f5b14c;
+            --shadow: 0 24px 80px rgba(1, 6, 17, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(124, 140, 255, 0.12), transparent 32%),
+                radial-gradient(circle at 85% 0%, rgba(118, 228, 211, 0.10), transparent 26%),
+                linear-gradient(180deg, #050812 0%, #070d18 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 350px minmax(0, 1fr);
+            gap: 18px;
+            height: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(13, 22, 37, 0.88);
+            border: 1px solid rgba(34, 50, 71, 0.9);
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+
+        .sidebar-header {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(34, 50, 71, 0.7);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 750;
+            letter-spacing: -0.04em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, rgba(118, 228, 211, 0.98), rgba(124, 140, 255, 0.92));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #07111c;
+            box-shadow: 0 14px 26px rgba(76, 190, 178, 0.24);
+        }
+
+        .workspace-meta {
+            margin-top: 8px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: var(--text-secondary);
+            max-width: 220px;
+        }
+
+        .workspace-pill,
+        .status-pill,
+        .section-badge,
+        .stat-chip {
+            border: 1px solid rgba(34, 50, 71, 0.95);
+            background: rgba(19, 31, 49, 0.9);
+            color: var(--text-primary);
+            border-radius: 999px;
+        }
+
+        .workspace-pill,
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 6px rgba(57, 217, 138, 0.12);
+        }
+
+        /* Upload Section */
+        .upload-section,
+        .documents-section {
+            margin-bottom: 18px;
+            padding: 18px;
+            border: 1px solid rgba(34, 50, 71, 0.75);
+            background: rgba(16, 26, 42, 0.82);
+            border-radius: 22px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-secondary);
+        }
+
+        .section-note {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .section-badge {
+            min-width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .upload-btn {
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(118, 228, 211, 0.96) 0%, rgba(124, 140, 255, 0.9) 100%);
+            color: #07111c;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 180ms ease-out, box-shadow 180ms ease-out, filter 180ms ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 14px 30px rgba(118, 228, 211, 0.16);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 36px rgba(118, 228, 211, 0.2);
+            filter: brightness(1.02);
+        }
+
+        .upload-btn:active {
+            transform: translateY(0);
+        }
+
+        .upload-btn:focus-visible,
+        .drag-drop-zone:focus-visible,
+        .prompt-chip:focus-visible,
+        .send-btn:focus-visible,
+        .modal-close:focus-visible,
+        .input-field:focus-visible {
+            outline: 2px solid rgba(118, 228, 211, 0.9);
+            outline-offset: 3px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Drag Drop Zone */
+        .drag-drop-zone {
+            margin-top: 14px;
+            border: 1.5px dashed rgba(112, 130, 162, 0.7);
+            border-radius: 18px;
+            padding: 18px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+            background: linear-gradient(180deg, rgba(19, 31, 49, 0.95), rgba(13, 22, 37, 0.86));
+        }
+
+        .drag-drop-zone:hover {
+            border-color: rgba(118, 228, 211, 0.85);
+            background: linear-gradient(180deg, rgba(19, 31, 49, 1), rgba(13, 22, 37, 0.92));
+            transform: translateY(-1px);
+        }
+
+        .drag-drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(118, 228, 211, 0.08);
+        }
+
+        .drag-drop-icon {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 12px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            background: rgba(118, 228, 211, 0.08);
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        .drag-drop-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .drag-drop-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Uploaded Documents */
+        .documents-section {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .document-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .document-item {
+            background: rgba(19, 31, 49, 0.95);
+            border: 1px solid rgba(34, 50, 71, 0.9);
+            border-radius: 18px;
+            padding: 14px;
+            cursor: pointer;
+            transition: transform 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .document-item:hover {
+            background: rgba(19, 31, 49, 1);
+            border-color: rgba(118, 228, 211, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .document-icon {
+            font-size: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .document-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-dark);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        .progress-status {
+            font-size: 11px;
+            color: var(--primary);
+            margin-top: 4px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .document-item.uploading .progress-container {
+            display: block;
+        }
+
+        .progress-stage-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Main Chat Area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(13, 22, 37, 0.78);
+            border: 1px solid rgba(34, 50, 71, 0.85);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            backdrop-filter: blur(18px);
+        }
+
+        .chat-header {
+            padding: 22px 24px;
+            border-bottom: 1px solid rgba(34, 50, 71, 0.75);
+            background: linear-gradient(180deg, rgba(17, 28, 45, 0.94), rgba(13, 22, 37, 0.9));
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .chat-eyebrow {
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .chat-title {
+            font-size: 28px;
+            line-height: 1.05;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            margin-bottom: 8px;
+        }
+
+        .chat-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            max-width: 680px;
+        }
+
+        .chat-tools {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .stat-chip {
+            min-width: 88px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .stat-chip span {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-chip small {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background:
+                radial-gradient(circle at 20% 0%, rgba(124, 140, 255, 0.06), transparent 22%),
+                radial-gradient(circle at 80% 10%, rgba(118, 228, 211, 0.05), transparent 18%);
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100%;
+            padding: 28px 0;
+        }
+
+        .empty-state-card {
+            width: min(760px, 100%);
+            padding: 28px;
+            border-radius: 28px;
+            border: 1px solid rgba(34, 50, 71, 0.85);
+            background: linear-gradient(180deg, rgba(19, 31, 49, 0.96), rgba(13, 22, 37, 0.88));
+            box-shadow: var(--shadow);
+        }
+
+        .empty-state-kicker {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--primary);
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .empty-state-title {
+            font-size: 30px;
+            line-height: 1.1;
+            letter-spacing: -0.05em;
+            font-weight: 800;
+            margin-bottom: 12px;
+            max-width: 620px;
+        }
+
+        .empty-state-text {
+            font-size: 15px;
+            line-height: 1.65;
+            color: var(--text-secondary);
+            max-width: 620px;
+            margin-bottom: 22px;
+        }
+
+        .prompt-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .prompt-chip {
+            min-height: 92px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(34, 50, 71, 0.95);
+            background: rgba(7, 13, 24, 0.7);
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            transition: transform 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+        }
+
+        .prompt-chip:hover {
+            transform: translateY(-1px);
+            border-color: rgba(118, 228, 211, 0.4);
+            background: rgba(16, 26, 42, 0.9);
+        }
+
+        .prompt-chip span {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+
+        .prompt-chip strong {
+            font-size: 14px;
+            line-height: 1.5;
+            font-weight: 700;
+        }
+
+        /* Message Bubbles */
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 68%;
+            padding: 14px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, rgba(118, 228, 211, 0.95) 0%, rgba(124, 140, 255, 0.95) 100%);
+            color: #07111c;
+            border-radius: 18px 4px 18px 18px;
+        }
+
+        .message.assistant .message-bubble {
+            background: rgba(13, 22, 37, 0.95);
+            border: 1px solid rgba(34, 50, 71, 0.95);
+            color: var(--text-primary);
+            border-radius: 4px 18px 18px 18px;
+            border-left: 3px solid rgba(118, 228, 211, 0.75);
+        }
+
+        .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Citations */
+        .citations {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .citation-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .message.user .citation-tag {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .citation-tag:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .message.user .citation-tag:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .citation-icon {
+            font-size: 12px;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 18px 24px 24px;
+            border-top: 1px solid rgba(34, 50, 71, 0.8);
+            background: linear-gradient(180deg, rgba(13, 22, 37, 0.78), rgba(13, 22, 37, 0.98));
+        }
+
+        .composer-card {
+            padding: 14px;
+            border-radius: 24px;
+            border: 1px solid rgba(34, 50, 71, 0.9);
+            background: rgba(7, 13, 24, 0.8);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(19, 31, 49, 0.92);
+            border: 1px solid rgba(34, 50, 71, 0.9);
+            border-radius: 18px;
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            transition: border-color 180ms ease-out, background 180ms ease-out, box-shadow 180ms ease-out;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: rgba(118, 228, 211, 0.55);
+            background: rgba(16, 26, 42, 0.98);
+            box-shadow: 0 0 0 4px rgba(118, 228, 211, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: #6f8196;
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, rgba(118, 228, 211, 0.96) 0%, rgba(124, 140, 255, 0.96) 100%);
+            border: none;
+            border-radius: 14px;
+            color: #07111c;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(118, 228, 211, 0.18);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 16px;
+            background: rgba(13, 22, 37, 0.96);
+            border: 1px solid rgba(34, 50, 71, 0.95);
+            border-radius: 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: toastSlideIn 0.3s ease;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-color: rgba(57, 217, 138, 0.75);
+        }
+
+        .toast.error {
+            border-color: rgba(245, 177, 76, 0.75);
+        }
+
+        .toast-icon {
+            font-size: 16px;
+        }
+
+        /* Modal for citations */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(13, 22, 37, 0.98);
+            border: 1px solid rgba(34, 50, 71, 0.95);
+            border-radius: 22px;
+            padding: 24px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .chunk-text {
+            background: rgba(7, 13, 24, 0.95);
+            border-left: 3px solid var(--primary);
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 980px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: 340px;
+            }
+
+            .chat-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .chat-tools {
+                justify-content: flex-start;
+            }
+
+            .prompt-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sidebar,
+            .main {
+                border-radius: 22px;
+            }
+
+            .message-bubble {
+                max-width: 92%;
+            }
+
+            .chat-title {
+                font-size: 24px;
+            }
+
+            .empty-state-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div>
+                    <div class="logo">
+                        <div class="logo-icon">📄</div>
+                        <span>Interdoc</span>
+                    </div>
+                    <div class="workspace-meta">Private document intelligence with grounded answers and chunk-level citations.</div>
+                </div>
+                <div class="status-pill"><span class="status-dot"></span><span>Live workspace</span></div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Upload</div>
+                        <div class="section-note">PDF, DOCX, TXT, PPTX, XLSX</div>
+                    </div>
+                </div>
+                <button class="upload-btn" id="uploadBtn">Upload document</button>
+                <input type="file" id="fileInput" accept=".pdf,.txt,.docx,.doc,.pptx,.xlsx">
+
+                <!-- Drag Drop Zone -->
+                <div class="drag-drop-zone" id="dragDropZone">
+                    <div class="drag-drop-icon">⬆</div>
+                    <div class="drag-drop-text">Drop files here</div>
+                    <div class="drag-drop-hint">or click to browse from your computer</div>
+                </div>
+            </div>
+
+            <!-- Documents Section -->
+            <div class="documents-section">
+                <div class="section-header">
+                    <div class="section-title">Documents</div>
+                    <div class="section-badge" id="documentCount">0</div>
+                </div>
+                <div class="document-list" id="documentList"></div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main">
+            <div class="chat-header">
+                <div>
+                    <div class="chat-eyebrow">Interdoc workspace</div>
+                    <div class="chat-title">Ask questions grounded in your uploads</div>
+                    <div class="chat-subtitle">Every answer is traced back to document chunks with citations, so the response feels trustworthy and reviewable.</div>
+                </div>
+                <div class="chat-tools">
+                    <div class="stat-chip"><span id="docCountStat">0</span><small>Docs</small></div>
+                    <div class="stat-chip"><span id="chunkCountStat">0</span><small>Chunks</small></div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div class="messages" id="messages">
+                <div class="empty-state">
+                    <div class="empty-state-card">
+                        <div class="empty-state-kicker">Knowledge-first chat</div>
+                        <div class="empty-state-title">Upload a file, then ask precise questions about what it says.</div>
+                        <div class="empty-state-text">Interdoc answers are grounded in your content and cite the exact document and chunk. Start with a summary question, a policy lookup, or a comparison request.</div>
+                        <div class="prompt-grid">
+                            <button class="prompt-chip" type="button" data-prompt="Summarize the key points from my uploaded document.">
+                                <span>Starter prompt</span>
+                                <strong>Summarize the key points</strong>
+                            </button>
+                            <button class="prompt-chip" type="button" data-prompt="What are the most important dates, deadlines, or requirements mentioned?"><span>Starter prompt</span><strong>Extract deadlines and requirements</strong></button>
+                            <button class="prompt-chip" type="button" data-prompt="Which section supports the main recommendation or conclusion?"><span>Starter prompt</span><strong>Find the strongest supporting evidence</strong></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="composer-card">
+                    <div class="input-wrapper">
+                        <textarea
+                            class="input-field"
+                            id="questionInput"
+                            placeholder="Ask a question about your documents..."
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn" id="sendBtn" disabled>
+                            ✈️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Citation Modal -->
+    <div class="modal" id="citationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Source Information</span>
+                <button class="modal-close" id="closeModal">✕</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - API on same server
+        const API_URL = '';
+
+        // State
+        let documents = [];
+        let conversationHistory = [];
+        let isLoading = false;
+
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dragDropZone = document.getElementById('dragDropZone');
+        const documentList = document.getElementById('documentList');
+        const documentCount = document.getElementById('documentCount');
+        const docCountStat = document.getElementById('docCountStat');
+        const chunkCountStat = document.getElementById('chunkCountStat');
+        const messagesContainer = document.getElementById('messages');
+        const questionInput = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const citationModal = document.getElementById('citationModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const modalBody = document.getElementById('modalBody');
+
+        // Event Listeners
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        dragDropZone.addEventListener('click', () => fileInput.click());
+        dragDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragDropZone.classList.add('drag-over');
+        });
+        dragDropZone.addEventListener('dragleave', () => {
+            dragDropZone.classList.remove('drag-over');
+        });
+        dragDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragDropZone.classList.remove('drag-over');
+            handleFileSelect({ target: { files: e.dataTransfer.files } });
+        });
+
+        questionInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        questionInput.addEventListener('input', () => {
+            autoResizeTextarea();
+            updateSendButtonState();
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+        messagesContainer.addEventListener('click', (e) => {
+            const prompt = e.target.closest('.prompt-chip');
+            if (!prompt) return;
+            const text = prompt.getAttribute('data-prompt');
+            if (!text) return;
+            questionInput.value = text;
+            autoResizeTextarea();
+            updateSendButtonState();
+            questionInput.focus();
+        });
+        closeModalBtn.addEventListener('click', () => citationModal.classList.remove('active'));
+        citationModal.addEventListener('click', (e) => {
+            if (e.target === citationModal) {
+                citationModal.classList.remove('active');
+            }
+        });
+
+        // File Upload Handler
+        async function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+
+            for (const file of files) {
+                await uploadDocument(file);
+            }
+
+            fileInput.value = '';
+        }
+
+        async function uploadDocument(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const docItem = createDocumentItem(file.name, 'uploading');
+            documentList.appendChild(docItem);
+
+            return new Promise((resolve) => {
+                const xhr = new XMLHttpRequest();
+                const progressBar = docItem.querySelector('.progress-bar-fill');
+                const progressStatus = docItem.querySelector('.progress-status');
+                const progressText = docItem.querySelector('.progress-text');
+                const progressDot = docItem.querySelector('.progress-stage-dot');
+
+                // Track upload progress
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 80); // First 80% for upload
+                        progressBar.style.width = percentComplete + '%';
+                        progressText.textContent = `Uploading... ${percentComplete}%`;
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        // Transition to processing stage
+                        progressText.textContent = 'Processing chunks...';
+                        progressBar.style.width = '90%';
+
+                        const data = JSON.parse(xhr.responseText);
+                        documents.push({
+                            filename: data.filename,
+                            chunks: data.chunks_created,
+                            uploadedAt: new Date().toLocaleTimeString(),
+                        });
+
+                        updateWorkspaceStats();
+
+                        // Complete animation
+                        setTimeout(() => {
+                            progressBar.style.width = '100%';
+                            progressText.textContent = 'Complete!';
+                            progressDot.style.animation = 'none';
+
+                            setTimeout(() => {
+                                updateDocumentItem(docItem, data.filename, data.chunks_created);
+                                docItem.classList.remove('uploading');
+                                showToast(`✅ Uploaded "${data.filename}"`, 'success');
+                                updateSendButtonState();
+
+                                // Clear empty state
+                                if (messagesContainer.querySelector('.empty-state')) {
+                                    messagesContainer.innerHTML = '';
+                                }
+                                resolve();
+                            }, 500);
+                        }, 300);
+                    } else {
+                        throw new Error('Upload failed');
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    docItem.remove();
+                    showToast(`❌ Failed to upload "${file.name}"`, 'error');
+                    resolve();
+                });
+
+                xhr.addEventListener('abort', () => {
+                    docItem.remove();
+                    showToast(`⏸ Upload cancelled`, 'error');
+                    resolve();
+                });
+
+                xhr.open('POST', `${API_URL}/upload`);
+                xhr.send(formData);
+            });
+        }
+
+        function createDocumentItem(name, status = 'ready') {
+            const docItem = document.createElement('div');
+            docItem.className = 'document-item' + (status === 'uploading' ? ' uploading' : '');
+            docItem.innerHTML = `
+                <div class="document-icon">${status === 'uploading' ? '<span class="loading-spinner"></span>' : '📄'}</div>
+                <div class="document-info">
+                    <div class="document-name">${escapeHtml(name)}</div>
+                    <div class="document-meta">${status === 'uploading' ? 'Preparing upload...' : 'Ready'}</div>
+                    <div class="progress-container">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-status">
+                            <span class="progress-stage-dot"></span>
+                            <span class="progress-text">Uploading...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return docItem;
+        }
+
+        function updateDocumentItem(docItem, filename, chunks) {
+            docItem.innerHTML = `
+                <div class="document-icon">✅</div>
+                <div class="document-info">
+                    <div class="document-name">${escapeHtml(filename)}</div>
+                    <div class="document-meta">${chunks} chunk${chunks !== 1 ? 's' : ''}</div>
+                </div>
+            `;
+        }
+
+        function updateWorkspaceStats() {
+            const chunkTotal = documents.reduce((sum, item) => sum + (Number(item.chunks) || 0), 0);
+            const docTotal = documents.length;
+
+            documentCount.textContent = docTotal;
+            docCountStat.textContent = docTotal;
+            chunkCountStat.textContent = chunkTotal;
+        }
+
+        // Message Sending
+        async function sendMessage() {
+            const question = questionInput.value.trim();
+            if (!question || isLoading || documents.length === 0) return;
+
+            isLoading = true;
+            updateSendButtonState();
+
+            // Clear empty state if present
+            if (messagesContainer.querySelector('.empty-state')) {
+                messagesContainer.innerHTML = '';
+            }
+
+            // Add user message
+            addMessage(question, 'user');
+            questionInput.value = '';
+            questionInput.style.height = 'auto';
+
+            try {
+                const response = await fetch(`${API_URL}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question }),
+                });
+
+                if (!response.ok) throw new Error('Query failed');
+
+                const data = await response.json();
+                addMessage(data.answer, 'assistant', data.sources || []);
+            } catch (error) {
+                console.error('Query error:', error);
+                addMessage('Sorry, I encountered an error processing your question. Please try again.', 'assistant', []);
+                showToast('❌ Failed to get response', 'error');
+            } finally {
+                isLoading = false;
+                updateSendButtonState();
+            }
+        }
+
+        function addMessage(text, role, sources = []) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            let citationsHtml = '';
+            if (role === 'assistant' && sources && sources.length > 0) {
+                citationsHtml = '<div class="citations">';
+                sources.forEach((source, index) => {
+                    citationsHtml += `
+                        <span class="citation-tag" onclick="showCitationDetail(${index}, '${escapeHtml(source.source)}', ${source.chunk_index})">
+                            <span class="citation-icon">📌</span>
+                            <span>${escapeHtml(source.source)} - Chunk ${source.chunk_index}</span>
+                        </span>
+                    `;
+                });
+                citationsHtml += '</div>';
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content">${escapeHtml(text)}</div>
+                    ${citationsHtml}
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showCitationDetail(index, filename, chunkIndex) {
+            // In a real implementation, you'd fetch the actual chunk content from the server
+            // For now, we'll show a placeholder
+            modalBody.innerHTML = `
+                <div class="chunk-text">
+                    <strong>Document:</strong> ${escapeHtml(filename)}<br><br>
+                    <strong>Chunk #${chunkIndex}</strong><br><br>
+                    <em>This is the relevant section from your document that was used to answer the question. In a production system, the actual chunk content would be displayed here.</em>
+                </div>
+            `;
+            citationModal.classList.add('active');
+        }
+
+        function updateSendButtonState() {
+            const hasContent = questionInput.value.trim().length > 0;
+            const hasDocuments = documents.length > 0;
+            sendBtn.disabled = !hasContent || !hasDocuments || isLoading;
+        }
+
+        function autoResizeTextarea() {
+            questionInput.style.height = 'auto';
+            questionInput.style.height = Math.min(questionInput.scrollHeight, 120) + 'px';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        updateWorkspaceStats();
+        updateSendButtonState();
+    </script>
+</body>
+</html>
+
